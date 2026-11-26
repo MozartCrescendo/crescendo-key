@@ -120,24 +120,25 @@
   </main>
 
   <script>
-    // Replace cp2 and cp3 with your Linkvertise URLs for Checkpoints 2 and 3
     const CONFIG = {
       key: "CRESCENDO-2026",
       cp1: "https://link-hub.net/9934473/XObaiFofj115",
-      cp2: "https://YOUR_LINKVERTISE_CP2_URL",
-      cp3: "https://YOUR_LINKVERTISE_CP3_URL"
+      cp2: "https://direct-link.net/9934473/TSyI6cI0DCTL",
+      cp3: "https://direct-link.net/9934473/khA6DcAxbOkM"
+    };
+
+    const ROUTES = {
+      step2: "#k8R2mP9vX4nQ",
+      step3: "#z5T7wL3bY8hJ",
+      done:  "#m4N9xK2pV7cW"
     };
 
     const siteBase = window.location.href.split("#")[0].replace(/\/+$/, "");
-    const step2PageUrl = `${siteBase}/#step=2`;
-    const step3PageUrl = `${siteBase}/#step=3`;
-    const finalKeyUrl  = `${siteBase}/#step=done`;
+    console.log("Step 2 target:", `${siteBase}/${ROUTES.step2}`);
+    console.log("Step 3 target:", `${siteBase}/${ROUTES.step3}`);
+    console.log("Done target:  ", `${siteBase}/${ROUTES.done}`);
 
-    console.log("Set Linkvertise CP1 target to:", step2PageUrl);
-    console.log("Set Linkvertise CP2 target to:", step3PageUrl);
-    console.log("Set Linkvertise CP3 target to:", finalKeyUrl);
-
-    // Strip any trailing slashes Linkvertise appends (e.g., #step=2/ -> #step=2)
+    // Strip any trailing slashes Linkvertise appends (e.g., #code/ -> #code)
     const hash = window.location.hash.replace(/\/+$/, "");
     const badge = document.getElementById("badge");
     const title = document.getElementById("title");
@@ -153,7 +154,7 @@
 
     keyValue.textContent = CONFIG.key;
 
-    if (hash === "#step=2") {
+    if (hash === ROUTES.step2) {
       pills[0].classList.add("active");
       pills[1].classList.add("active");
       badge.textContent = "Checkpoint 2 of 3";
@@ -161,14 +162,14 @@
       desc.textContent = "Continue to Checkpoint 2 on Linkvertise to move closer to your Crescendo Hub key.";
       btn.textContent = "Continue to Checkpoint 2";
       btn.href = CONFIG.cp2;
-    } else if (hash === "#step=3") {
+    } else if (hash === ROUTES.step3) {
       pills.forEach(p => p.classList.add("active"));
       badge.textContent = "Checkpoint 3 of 3";
       title.textContent = "Checkpoint 2 Complete";
       desc.textContent = "Finish the final checkpoint on Linkvertise to reveal your key.";
       btn.textContent = "Continue to Checkpoint 3";
       btn.href = CONFIG.cp3;
-    } else if (hash === "#step=done") {
+    } else if (hash === ROUTES.done) {
       pills.forEach(p => p.classList.add("active"));
       badge.textContent = "Unlocked";
       title.textContent = "Your Crescendo Hub Key";
