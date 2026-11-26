@@ -120,7 +120,7 @@
   </main>
 
   <script>
-    // Replace these with your actual URLs before publishing
+    // Replace cp2 and cp3 with your Linkvertise URLs for Checkpoints 2 and 3
     const CONFIG = {
       key: "CRESCENDO-2026",
       cp1: "https://link-hub.net/9934473/XObaiFofj115",
@@ -133,15 +133,12 @@
     const step3PageUrl = `${siteBase}/#step=3`;
     const finalKeyUrl  = `${siteBase}/#step=done`;
 
-    // Set your Linkvertise targets to:
-    // - Linkvertise CP1 target -> step2PageUrl
-    // - Linkvertise CP2 target -> step3PageUrl
-    // - Linkvertise CP3 target -> finalKeyUrl
     console.log("Set Linkvertise CP1 target to:", step2PageUrl);
     console.log("Set Linkvertise CP2 target to:", step3PageUrl);
     console.log("Set Linkvertise CP3 target to:", finalKeyUrl);
 
-    const hash = window.location.hash;
+    // Strip any trailing slashes Linkvertise appends (e.g., #step=2/ -> #step=2)
+    const hash = window.location.hash.replace(/\/+$/, "");
     const badge = document.getElementById("badge");
     const title = document.getElementById("title");
     const desc = document.getElementById("desc");
