@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crescendo Hub — Key System</title>
+  <style>
+    :root {
+      --bg: #0c0f17;
+      --card: #151a27;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #263046;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at top, #172036, var(--bg) 65%);
+      color: var(--text);
+      padding: 20px;
+    }
+    .card {
+      width: 100%;
+      max-width: 460px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.12);
+      padding: 5px 10px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    p { color: var(--muted); line-height: 1.5; margin-bottom: 20px; font-size: 14px; }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+    .step-pill {
+      text-align: center;
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #0f131e;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .step-pill.active {
+      border-color: var(--accent);
+      color: var(--text);
+      background: rgba(56, 189, 248, 0.14);
+    }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      background: var(--accent);
+      color: #061018;
+      font-weight: 700;
+      padding: 13px 18px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .key-box {
+      display: none;
+      background: #0d111b;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .key-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 18px;
+      font-weight: 700;
+      color: #38bdf8;
+      user-select: all;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <span class="badge" id="badge">Checkpoint 1 of 3</span>
+    <h1 id="title">Crescendo Hub Key System</h1>
+    <p id="desc">Complete all 3 checkpoints to unlock your Crescendo Hub access key.</p>
+
+    <div class="steps">
+      <div class="step-pill" id="pill-1">Step 1</div>
+      <div class="step-pill" id="pill-2">Step 2</div>
+      <div class="step-pill" id="pill-3">Step 3</div>
+    </div>
+
+    <div class="key-box" id="keyBox">
+      <div class="key-code" id="keyValue">CRESCENDO-2026</div>
+    </div>
+
+    <a class="btn" id="actionBtn" href="#">Start Checkpoint 1</a>
+  </main>
+
+  <script>
+    // Replace these with your actual URLs before publishing
+    const CONFIG = {
+      key: "CRESCENDO-2026",
+      cp1: "https://YOUR_LINKVERTISE_CP1_URL",
+      cp2: "https://YOUR_LINKVERTISE_CP2_URL",
+      cp3: "https://YOUR_LINKVERTISE_CP3_URL"
+    };
+
+    const siteBase = window.location.href.split("#")[0].replace(/\/+$/, "");
+    const step2PageUrl = `${siteBase}/#step=2`;
+    const step3PageUrl = `${siteBase}/#step=3`;
+    const finalKeyUrl  = `${siteBase}/#step=done`;
+
+    // Set your Linkvertise targets to:
+    // - Linkvertise CP1 target -> step2PageUrl
+    // - Linkvertise CP2 target -> step3PageUrl
+    // - Linkvertise CP3 target -> finalKeyUrl
+    console.log("Set Linkvertise CP1 target to:", step2PageUrl);
+    console.log("Set Linkvertise CP2 target to:", step3PageUrl);
+    console.log("Set Linkvertise CP3 target to:", finalKeyUrl);
+
+    const hash = window.location.hash;
+    const badge = document.getElementById("badge");
+    const title = document.getElementById("title");
+    const desc = document.getElementById("desc");
+    const btn = document.getElementById("actionBtn");
+    const keyBox = document.getElementById("keyBox");
+    const keyValue = document.getElementById("keyValue");
+    const pills = [
+      document.getElementById("pill-1"),
+      document.getElementById("pill-2"),
+      document.getElementById("pill-3")
+    ];
+
+    keyValue.textContent = CONFIG.key;
+
+    if (hash === "#step=2") {
+      pills[0].classList.add("active");
+      pills[1].classList.add("active");
+      badge.textContent = "Checkpoint 2 of 3";
+      title.textContent = "Checkpoint 1 Complete";
+      desc.textContent = "Continue to Checkpoint 2 on Linkvertise to move closer to your Crescendo Hub key.";
+      btn.textContent = "Continue to Checkpoint 2";
+      btn.href = CONFIG.cp2;
+    } else if (hash === "#step=3") {
+      pills.forEach(p => p.classList.add("active"));
+      badge.textContent = "Checkpoint 3 of 3";
+      title.textContent = "Checkpoint 2 Complete";
+      desc.textContent = "Finish the final checkpoint on Linkvertise to reveal your key.";
+      btn.textContent = "Continue to Checkpoint 3";
+      btn.href = CONFIG.cp3;
+    } else if (hash === "#step=done") {
+      pills.forEach(p => p.classList.add("active"));
+      badge.textContent = "Unlocked";
+      title.textContent = "Your Crescendo Hub Key";
+      desc.textContent = "Copy the key below and paste it into the Crescendo Hub key prompt.";
+      keyBox.style.display = "block";
+      btn.textContent = "Copy Key";
+      btn.href = "#";
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        navigator.clipboard?.writeText(CONFIG.key);
+        btn.textContent = "Copied!";
+      });
+    } else {
+      pills[0].classList.add("active");
+      badge.textContent = "Checkpoint 1 of 3";
+      title.textContent = "Crescendo Hub Key System";
+      desc.textContent = "Start Checkpoint 1 on Linkvertise, then return here to advance through Steps 2 and 3.";
+      btn.textContent = "Start Checkpoint 1";
+      btn.href = CONFIG.cp1;
+    }
+  </script>
+</body>
+</html>
