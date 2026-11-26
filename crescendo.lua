@@ -33,28 +33,41 @@ local function LoadCrescendoHub()
 
 	local PlayerTab = Window:CreateTab("Player", 4483362458)
 
-	-- Shared state & enforcement settings
-	local State = {
-		SpeedEnabled = false,
+	local SavedDefaults = {
 		WalkSpeed = 16,
+		JumpPower = 50,
+		FlySpeed = 60,
+		VehicleFlySpeed = 80,
+		Gravity = Workspace.Gravity,
+		MaxZoom = LocalPlayer.CameraMaxZoomDistance,
+		GlobalShadows = Lighting.GlobalShadows,
+		FogEnd = Lighting.FogEnd,
+		Brightness = Lighting.Brightness,
+		Ambient = Lighting.Ambient,
+		OutdoorAmbient = Lighting.OutdoorAmbient
+	}
+
+	local Defaults = {
+		SpeedEnabled = false,
+		WalkSpeed = SavedDefaults.WalkSpeed,
 
 		JumpPowerEnabled = false,
-		JumpPower = 50,
+		JumpPower = SavedDefaults.JumpPower,
 
 		InfJump = false,
 		NoClip = false,
 
 		FlyEnabled = false,
-		FlySpeed = 60,
+		FlySpeed = SavedDefaults.FlySpeed,
 
 		VehicleFlyEnabled = false,
-		VehicleFlySpeed = 80,
+		VehicleFlySpeed = SavedDefaults.VehicleFlySpeed,
 
 		GravityEnabled = false,
-		Gravity = Workspace.Gravity,
+		Gravity = math.clamp(SavedDefaults.Gravity, 0, 300),
 
 		MaxZoomEnabled = false,
-		MaxZoom = LocalPlayer.CameraMaxZoomDistance,
+		MaxZoom = math.clamp(SavedDefaults.MaxZoom, 10, 5000),
 
 		InstantPrompt = false,
 		AntiAFK = false,
@@ -64,15 +77,38 @@ local function LoadCrescendoHub()
 		Fullbright = false
 	}
 
-	local SavedDefaults = {
-		Gravity = Workspace.Gravity,
-		MaxZoom = LocalPlayer.CameraMaxZoomDistance,
-		GlobalShadows = Lighting.GlobalShadows,
-		FogEnd = Lighting.FogEnd,
-		Brightness = Lighting.Brightness,
-		Ambient = Lighting.Ambient,
-		OutdoorAmbient = Lighting.OutdoorAmbient
+	-- Shared state & enforcement settings
+	local State = {
+		SpeedEnabled = Defaults.SpeedEnabled,
+		WalkSpeed = Defaults.WalkSpeed,
+
+		JumpPowerEnabled = Defaults.JumpPowerEnabled,
+		JumpPower = Defaults.JumpPower,
+
+		InfJump = Defaults.InfJump,
+		NoClip = Defaults.NoClip,
+
+		FlyEnabled = Defaults.FlyEnabled,
+		FlySpeed = Defaults.FlySpeed,
+
+		VehicleFlyEnabled = Defaults.VehicleFlyEnabled,
+		VehicleFlySpeed = Defaults.VehicleFlySpeed,
+
+		GravityEnabled = Defaults.GravityEnabled,
+		Gravity = Defaults.Gravity,
+
+		MaxZoomEnabled = Defaults.MaxZoomEnabled,
+		MaxZoom = Defaults.MaxZoom,
+
+		InstantPrompt = Defaults.InstantPrompt,
+		AntiAFK = Defaults.AntiAFK,
+		AntiPaused = Defaults.AntiPaused,
+		ESPEnabled = Defaults.ESPEnabled,
+		BoostFPS = Defaults.BoostFPS,
+		Fullbright = Defaults.Fullbright
 	}
+
+	local UIControls = {}
 
 	local ESPFolder = Instance.new("Folder")
 	ESPFolder.Name = "CrescendoHub_ESP"
@@ -174,243 +210,401 @@ local function LoadCrescendoHub()
 		end
 	end
 
+	local function RestoreAllDefaults()
+		-- Reset all state values first
+		for key, defaultVal in pairs(Defaults) do
+			State[key] = defaultVal
+		end
+
+		-- Sync UI toggles and sliders back to default values
+		for _, control in ipairs(UIControls) do
+			if control and type(control.Set) == "function" then
+				pcall(function()
+					control:Set(control.Default)
+				end)
+			end
+		end
+
+		-- Restore environment, lighting, camera, character states, and ESP
+		Workspace.Gravity = SavedDefaults.Gravity
+		LocalPlayer.CameraMaxZoomDistance = SavedDefaults.MaxZoom
+		RestoreLightingIfDisabled()
+		ClearESP()
+
+		local char = LocalPlayer.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		local root = char and char:FindFirstChild("HumanoidRootPart")
+
+		if hum then
+			hum.PlatformStand = false
+			hum.WalkSpeed = SavedDefaults.WalkSpeed
+			hum.UseJumpPower = true
+			hum.JumpPower = SavedDefaults.JumpPower
+		end
+		if root then
+			root.AssemblyLinearVelocity = Vector3.zero
+			root.AssemblyAngularVelocity = Vector3.zero
+		end
+	end
+
 	-- 1. WalkSpeed
 	PlayerTab:CreateSection("Movement")
 
-	PlayerTab:CreateToggle({
-		Name = "WalkSpeed Loop",
-		CurrentValue = false,
-		Flag = "WalkSpeedToggle",
-		Callback = function(Value)
-			State.SpeedEnabled = Value
-		end
-	})
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.SpeedEnabled,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateToggle({
+			Name = "WalkSpeed Loop",
+			CurrentValue = Defaults.SpeedEnabled,
+			Flag = "WalkSpeedToggle",
+			Callback = function(Value)
+				State.SpeedEnabled = Value
+			end
+		})
+	}
 
-	PlayerTab:CreateSlider({
-		Name = "WalkSpeed",
-		Range = {16, 250},
-		Increment = 1,
-		Suffix = " SPS",
-		CurrentValue = 16,
-		Flag = "WalkSpeedSlider",
-		Callback = function(Value)
-			State.WalkSpeed = Value
-		end
-	})
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.WalkSpeed,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateSlider({
+			Name = "WalkSpeed",
+			Range = {16, 250},
+			Increment = 1,
+			Suffix = " SPS",
+			CurrentValue = Defaults.WalkSpeed,
+			Flag = "WalkSpeedSlider",
+			Callback = function(Value)
+				State.WalkSpeed = Value
+			end
+		})
+	}
 
 	-- 2. JumpPower
-	PlayerTab:CreateToggle({
-		Name = "JumpPower Loop",
-		CurrentValue = false,
-		Flag = "JumpPowerToggle",
-		Callback = function(Value)
-			State.JumpPowerEnabled = Value
-		end
-	})
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.JumpPowerEnabled,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateToggle({
+			Name = "JumpPower Loop",
+			CurrentValue = Defaults.JumpPowerEnabled,
+			Flag = "JumpPowerToggle",
+			Callback = function(Value)
+				State.JumpPowerEnabled = Value
+			end
+		})
+	}
 
-	PlayerTab:CreateSlider({
-		Name = "JumpPower",
-		Range = {50, 350},
-		Increment = 1,
-		Suffix = " JP",
-		CurrentValue = 50,
-		Flag = "JumpPowerSlider",
-		Callback = function(Value)
-			State.JumpPower = Value
-		end
-	})
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.JumpPower,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateSlider({
+			Name = "JumpPower",
+			Range = {50, 350},
+			Increment = 1,
+			Suffix = " JP",
+			CurrentValue = Defaults.JumpPower,
+			Flag = "JumpPowerSlider",
+			Callback = function(Value)
+				State.JumpPower = Value
+			end
+		})
+	}
 
 	-- 3. Infinite Jump
-	PlayerTab:CreateToggle({
-		Name = "Infinite Jump",
-		CurrentValue = false,
-		Flag = "InfJumpToggle",
-		Callback = function(Value)
-			State.InfJump = Value
-		end
-	})
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.InfJump,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateToggle({
+			Name = "Infinite Jump",
+			CurrentValue = Defaults.InfJump,
+			Flag = "InfJumpToggle",
+			Callback = function(Value)
+				State.InfJump = Value
+			end
+		})
+	}
 
 	-- 4. NoClip
-	PlayerTab:CreateToggle({
-		Name = "NoClip",
-		CurrentValue = false,
-		Flag = "NoClipToggle",
-		Callback = function(Value)
-			State.NoClip = Value
-		end
-	})
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.NoClip,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateToggle({
+			Name = "NoClip",
+			CurrentValue = Defaults.NoClip,
+			Flag = "NoClipToggle",
+			Callback = function(Value)
+				State.NoClip = Value
+			end
+		})
+	}
 
 	-- 5. Fly
 	PlayerTab:CreateSection("Flight")
 
-	PlayerTab:CreateToggle({
-		Name = "Fly",
-		CurrentValue = false,
-		Flag = "FlyToggle",
-		Callback = function(Value)
-			State.FlyEnabled = Value
-		end
-	})
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.FlyEnabled,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateToggle({
+			Name = "Fly",
+			CurrentValue = Defaults.FlyEnabled,
+			Flag = "FlyToggle",
+			Callback = function(Value)
+				State.FlyEnabled = Value
+			end
+		})
+	}
 
-	PlayerTab:CreateSlider({
-		Name = "Fly Speed",
-		Range = {16, 300},
-		Increment = 1,
-		Suffix = " SPD",
-		CurrentValue = 60,
-		Flag = "FlySpeedSlider",
-		Callback = function(Value)
-			State.FlySpeed = Value
-		end
-	})
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.FlySpeed,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateSlider({
+			Name = "Fly Speed",
+			Range = {16, 300},
+			Increment = 1,
+			Suffix = " SPD",
+			CurrentValue = Defaults.FlySpeed,
+			Flag = "FlySpeedSlider",
+			Callback = function(Value)
+				State.FlySpeed = Value
+			end
+		})
+	}
 
 	-- 6. Vehicle Fly
-	PlayerTab:CreateToggle({
-		Name = "Vehicle Fly",
-		CurrentValue = false,
-		Flag = "VehicleFlyToggle",
-		Callback = function(Value)
-			State.VehicleFlyEnabled = Value
-		end
-	})
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.VehicleFlyEnabled,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateToggle({
+			Name = "Vehicle Fly",
+			CurrentValue = Defaults.VehicleFlyEnabled,
+			Flag = "VehicleFlyToggle",
+			Callback = function(Value)
+				State.VehicleFlyEnabled = Value
+			end
+		})
+	}
 
-	PlayerTab:CreateSlider({
-		Name = "Vehicle Fly Speed",
-		Range = {20, 400},
-		Increment = 1,
-		Suffix = " SPD",
-		CurrentValue = 80,
-		Flag = "VehicleFlySpeedSlider",
-		Callback = function(Value)
-			State.VehicleFlySpeed = Value
-		end
-	})
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.VehicleFlySpeed,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateSlider({
+			Name = "Vehicle Fly Speed",
+			Range = {20, 400},
+			Increment = 1,
+			Suffix = " SPD",
+			CurrentValue = Defaults.VehicleFlySpeed,
+			Flag = "VehicleFlySpeedSlider",
+			Callback = function(Value)
+				State.VehicleFlySpeed = Value
+			end
+		})
+	}
 
 	-- 7. Gravity & 8. MaxZoom
 	PlayerTab:CreateSection("World & Camera")
 
-	PlayerTab:CreateToggle({
-		Name = "Custom Gravity Loop",
-		CurrentValue = false,
-		Flag = "GravityToggle",
-		Callback = function(Value)
-			State.GravityEnabled = Value
-			if not Value then
-				Workspace.Gravity = SavedDefaults.Gravity
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.GravityEnabled,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateToggle({
+			Name = "Custom Gravity Loop",
+			CurrentValue = Defaults.GravityEnabled,
+			Flag = "GravityToggle",
+			Callback = function(Value)
+				State.GravityEnabled = Value
+				if not Value then
+					Workspace.Gravity = SavedDefaults.Gravity
+				end
 			end
-		end
-	})
+		})
+	}
 
-	PlayerTab:CreateSlider({
-		Name = "Gravity",
-		Range = {0, 300},
-		Increment = 1,
-		Suffix = " G",
-		CurrentValue = math.clamp(SavedDefaults.Gravity, 0, 300),
-		Flag = "GravitySlider",
-		Callback = function(Value)
-			State.Gravity = Value
-		end
-	})
-
-	PlayerTab:CreateToggle({
-		Name = "MaxZoom Loop",
-		CurrentValue = false,
-		Flag = "MaxZoomToggle",
-		Callback = function(Value)
-			State.MaxZoomEnabled = Value
-			if not Value then
-				LocalPlayer.CameraMaxZoomDistance = SavedDefaults.MaxZoom
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.Gravity,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateSlider({
+			Name = "Gravity",
+			Range = {0, 300},
+			Increment = 1,
+			Suffix = " G",
+			CurrentValue = Defaults.Gravity,
+			Flag = "GravitySlider",
+			Callback = function(Value)
+				State.Gravity = Value
 			end
-		end
-	})
+		})
+	}
 
-	PlayerTab:CreateSlider({
-		Name = "MaxZoom Distance",
-		Range = {10, 5000},
-		Increment = 10,
-		Suffix = " Studs",
-		CurrentValue = math.clamp(SavedDefaults.MaxZoom, 10, 5000),
-		Flag = "MaxZoomSlider",
-		Callback = function(Value)
-			State.MaxZoom = Value
-		end
-	})
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.MaxZoomEnabled,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateToggle({
+			Name = "MaxZoom Loop",
+			CurrentValue = Defaults.MaxZoomEnabled,
+			Flag = "MaxZoomToggle",
+			Callback = function(Value)
+				State.MaxZoomEnabled = Value
+				if not Value then
+					LocalPlayer.CameraMaxZoomDistance = SavedDefaults.MaxZoom
+				end
+			end
+		})
+	}
+
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.MaxZoom,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateSlider({
+			Name = "MaxZoom Distance",
+			Range = {10, 5000},
+			Increment = 10,
+			Suffix = " Studs",
+			CurrentValue = Defaults.MaxZoom,
+			Flag = "MaxZoomSlider",
+			Callback = function(Value)
+				State.MaxZoom = Value
+			end
+		})
+	}
 
 	-- 9. Instant Proximity Prompt, 10. Anti-AFK, 11. Anti-Gameplay Paused
 	PlayerTab:CreateSection("Automation & Protection")
 
-	PlayerTab:CreateToggle({
-		Name = "Instant Proximity Prompt",
-		CurrentValue = false,
-		Flag = "InstantPromptToggle",
-		Callback = function(Value)
-			State.InstantPrompt = Value
-			if Value then
-				PatchPrompts()
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.InstantPrompt,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateToggle({
+			Name = "Instant Proximity Prompt",
+			CurrentValue = Defaults.InstantPrompt,
+			Flag = "InstantPromptToggle",
+			Callback = function(Value)
+				State.InstantPrompt = Value
+				if Value then
+					PatchPrompts()
+				end
 			end
-		end
-	})
+		})
+	}
 
-	PlayerTab:CreateToggle({
-		Name = "Anti-AFK",
-		CurrentValue = false,
-		Flag = "AntiAFKToggle",
-		Callback = function(Value)
-			State.AntiAFK = Value
-		end
-	})
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.AntiAFK,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateToggle({
+			Name = "Anti-AFK",
+			CurrentValue = Defaults.AntiAFK,
+			Flag = "AntiAFKToggle",
+			Callback = function(Value)
+				State.AntiAFK = Value
+			end
+		})
+	}
 
-	PlayerTab:CreateToggle({
-		Name = "Anti-Gameplay Paused",
-		CurrentValue = false,
-		Flag = "AntiPausedToggle",
-		Callback = function(Value)
-			State.AntiPaused = Value
-		end
-	})
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.AntiPaused,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateToggle({
+			Name = "Anti-Gameplay Paused",
+			CurrentValue = Defaults.AntiPaused,
+			Flag = "AntiPausedToggle",
+			Callback = function(Value)
+				State.AntiPaused = Value
+			end
+		})
+	}
 
 	-- 12. ESP, 13. Boost FPS, 14. Fullbright
 	PlayerTab:CreateSection("Visuals & Performance")
 
-	PlayerTab:CreateToggle({
-		Name = "Player ESP",
-		CurrentValue = false,
-		Flag = "ESPToggle",
-		Callback = function(Value)
-			State.ESPEnabled = Value
-			UpdateESP()
-		end
-	})
-
-	PlayerTab:CreateToggle({
-		Name = "Boost FPS",
-		CurrentValue = false,
-		Flag = "BoostFPSToggle",
-		Callback = function(Value)
-			State.BoostFPS = Value
-			if Value then
-				ApplyFPSBoost()
-			else
-				RestoreLightingIfDisabled()
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.ESPEnabled,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateToggle({
+			Name = "Player ESP",
+			CurrentValue = Defaults.ESPEnabled,
+			Flag = "ESPToggle",
+			Callback = function(Value)
+				State.ESPEnabled = Value
+				UpdateESP()
 			end
-		end
-	})
+		})
+	}
 
-	PlayerTab:CreateToggle({
-		Name = "Fullbright",
-		CurrentValue = false,
-		Flag = "FullbrightToggle",
-		Callback = function(Value)
-			State.Fullbright = Value
-			if Value then
-				ApplyFullbright()
-			else
-				RestoreLightingIfDisabled()
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.BoostFPS,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateToggle({
+			Name = "Boost FPS",
+			CurrentValue = Defaults.BoostFPS,
+			Flag = "BoostFPSToggle",
+			Callback = function(Value)
+				State.BoostFPS = Value
+				if Value then
+					ApplyFPSBoost()
+				else
+					RestoreLightingIfDisabled()
+				end
 			end
-		end
-	})
+		})
+	}
 
+	UIControls[#UIControls + 1] = {
+		Default = Defaults.Fullbright,
+		Set = function(self, v)
+			if self.Element and self.Element.Set then self.Element:Set(v) end
+		end,
+		Element = PlayerTab:CreateToggle({
+			Name = "Fullbright",
+			CurrentValue = Defaults.Fullbright,
+			Flag = "FullbrightToggle",
+			Callback = function(Value)
+				State.Fullbright = Value
+				if Value then
+					ApplyFullbright()
+				else
+					RestoreLightingIfDisabled()
+				end
+			end
+		})
+	}
+
+	-- Quick Actions
 	PlayerTab:CreateSection("Quick Actions")
 
 	PlayerTab:CreateButton({
@@ -419,6 +613,18 @@ local function LoadCrescendoHub()
 			if LocalPlayer.Character then
 				LocalPlayer.Character:BreakJoints()
 			end
+		end
+	})
+
+	PlayerTab:CreateButton({
+		Name = "Restore Defaults",
+		Callback = function()
+			RestoreAllDefaults()
+			Rayfield:Notify({
+				Title = "Defaults Restored",
+				Content = "All toggles turned off and sliders reset to default.",
+				Duration = 4
+			})
 		end
 	})
 
